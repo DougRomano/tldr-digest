@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ a.title }} · TLDRDigest{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>{{ a.title }}</h2>
+    <div class="subtitle">
+      <span class="badge {{ a.badge_class }}">{{ a.issue.source.value | badge_label }}</span>
+      · {{ a.issue.received_at | short_date }}
+      · <a href="{{ a.url }}" target="_blank">open source ↗</a>
+      · <span class="status s-{{ a.enrich_status.value | replace('_','-') }}">{{ a.enrich_status.value }}</span>
+    </div>
+  </div>
+  <div class="actions">
+    <form hx-post="/articles/{{ a.id }}/review" hx-swap="none" style="display:inline">
+      <button class="btn {% if a.reviewed %}primary{% endif %}">
+        {% if a.reviewed %}✓ Reviewed{% else %}Mark reviewed{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Summary</h3>
+  <p>{{ a.llm_summary or a.raw_snippet }}</p>
+  {% if a.llm_so_what %}
+  <div class="so-what"><strong>So what for .NET:</strong> {{ a.llm_so_what }}</div>
+  {% endif %}
+  {% if a.enrich_error %}<p style="color:#f87171"><b>Enrich error:</b> {{ a.enrich_error }}</p>{% endif %}
+</div>
+
+<h3 style="font-size:14px;color:#94a3b8;margin:24px 0 8px">Tags</h3>
+<div class="tags" id="article-tags">
+  {% for t in all_tags %}
+    <span class="tag {% if t in a.tags %}on{% endif %}"
+          hx-post="/articles/{{ a.id }}/tag"
+          hx-vals='{"name": "{{ t.name }}"}'
+          hx-swap="outerHTML">{{ t.name }}</span>
+  {% endfor %}
+</div>
+<form style="margin-top:10px;display:flex;gap:6px" hx-post="/articles/{{ a.id }}/tag" hx-target="#article-tags" hx-swap="beforeend">
+  <input type="text" name="name" placeholder="new-tag" required style="min-width:180px"/>
+  <button class="btn">add</button>
+</form>
+
+{% if similar %}
+<h3 style="font-size:14px;color:#94a3b8;margin:28px 0 8px">Similar articles</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+  {% for s in similar %}
+  <div class="card">
+    <h3><a href="/articles/{{ s.id }}">{{ s.title }}</a></h3>
+    <p>{{ (s.llm_summary or s.raw_snippet[:200]) }}</p>
+    <div class="meta">{{ s.issue.source.value | badge_label }} · {{ s.issue.received_at | short_date }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h3 style="font-size:14px;color:#94a3b8;margin:28px 0 8px">Raw snippet</h3>
+<div class="card" style="white-space:pre-wrap;color:#94a3b8;font-size:13px">{{ a.raw_snippet }}</div>
+{% endblock %}

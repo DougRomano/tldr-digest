@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TLDRDigest{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/site.css">
+<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <h1>TLDR<span class="dot">·</span>Digest</h1>
+    <ul>
+      <li><a class="nav {% if active == 'dashboard' %}active{% endif %}" href="/">Dashboard</a></li>
+      <li><a class="nav {% if active == 'inbox' %}active{% endif %}" href="/inbox">Inbox</a></li>
+      <li><a class="nav {% if active == 'search' %}active{% endif %}" href="/search">Search</a></li>
+      <li><a class="nav {% if active == 'reports' %}active{% endif %}" href="/reports">Reports</a></li>
+      <li><a class="nav {% if active == 'settings' %}active{% endif %}" href="/settings">Settings</a></li>
+    </ul>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

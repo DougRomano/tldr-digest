@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Search · TLDRDigest{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Search</h2>
+    <div class="subtitle">Keyword (Postgres FTS) + semantic (pgvector) combined via reciprocal rank fusion.</div>
+  </div>
+</div>
+
+<form method="get" action="/search" style="display:flex;gap:8px;margin-bottom:18px">
+  <input type="search" name="q" value="{{ q }}" placeholder="e.g. azure mcp identity" autofocus style="flex:1"/>
+  <select name="mode">
+    <option value="hybrid" {% if mode == 'hybrid' %}selected{% endif %}>Hybrid</option>
+    <option value="fts"    {% if mode == 'fts'    %}selected{% endif %}>Keyword (FTS)</option>
+    <option value="semantic" {% if mode == 'semantic' %}selected{% endif %}>Semantic</option>
+  </select>
+  <button class="btn primary">Search</button>
+</form>
+
+{% if q %}
+  {% if results %}
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:8px">{{ results|length }} results</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px">
+      {% for r in results %}
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <h3><a href="/articles/{{ r.article.id }}">{{ r.article.title }}</a></h3>
+            <div>
+              <span class="badge {{ r.article.badge_class }}">{{ r.article.issue.source.value | badge_label }}</span>
+            </div>
+          </div>
+          <p>{{ r.article.llm_summary or r.article.raw_snippet[:300] }}</p>
+          <div class="meta">
+            {{ r.article.issue.received_at | short_date }} · score {{ r.score }}
+            {% if r.in_fts %}· FTS{% endif %}
+            {% if r.in_semantic %}· semantic{% endif %}
+            · <a href="{{ r.article.url }}" target="_blank">open ↗</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color:#64748b">No matches.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

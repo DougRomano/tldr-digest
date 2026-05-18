@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Reports · TLDRDigest{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Reports</h2>
+    <div class="subtitle">Per-newsletter weekly HTML digests written to <code>Branding/</code>.</div>
+  </div>
+</div>
+
+<form hx-post="/reports/generate" hx-swap="afterend"
+      style="background:#1a1f2e;border:1px solid #2a3142;padding:16px;border-radius:10px;margin-bottom:24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <label style="color:#94a3b8;font-size:13px">Generate report for</label>
+  <select name="source" required>
+    {% for s in sources %}<option value="{{ s.value }}">{{ s.value | badge_label }}</option>{% endfor %}
+  </select>
+  <label style="color:#94a3b8;font-size:13px">using</label>
+  <select name="provider">
+    <option value="">(active provider)</option>
+    <option value="claude">Claude</option>
+    <option value="ollama">Ollama</option>
+  </select>
+  <button class="btn primary">Generate</button>
+</form>
+
+<table class="list">
+  <thead>
+    <tr>
+      <th>Source</th><th>Headline</th><th>Week</th><th>Provider</th><th>Generated</th><th>File</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in reports %}
+    <tr>
+      <td><span class="badge {{ r.source.value | badge_class }}">{{ r.source.value | badge_label }}</span></td>
+      <td><a class="title" href="/reports/view/{{ r.id }}" target="_blank">{{ r.headline or '(no headline)' }}</a></td>
+      <td style="color:#94a3b8">{{ r.week_start | short_date }} – {{ r.week_end | short_date }}</td>
+      <td><span class="status s-{{ r.provider_used.value | replace('_','-') }}">{{ r.provider_used.value }}</span></td>
+      <td style="color:#64748b">{{ r.generated_at | short_date }}</td>
+      <td style="color:#64748b;font-size:11px">{{ r.file_path }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px">No reports yet. Generate one above.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

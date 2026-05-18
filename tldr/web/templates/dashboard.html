@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · TLDRDigest{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Articles</h2>
+    <div class="subtitle">Latest TLDR articles across the four newsletters. Click a tag to toggle, tick to mark reviewed.</div>
+  </div>
+</div>
+
+<div class="filters">
+  <a class="pill {% if not source %}active{% endif %}" href="/">All sources</a>
+  {% for s in sources %}
+    <a class="pill {% if source == s.value %}active{% endif %}" href="/?source={{ s.value }}">{{ s.value | badge_label }}</a>
+  {% endfor %}
+  <a class="pill {% if reviewed == 'no' %}active{% endif %}" href="/?reviewed=no{% if source %}&source={{ source }}{% endif %}">Unreviewed</a>
+  <a class="pill {% if reviewed == 'yes' %}active{% endif %}" href="/?reviewed=yes{% if source %}&source={{ source }}{% endif %}">Reviewed</a>
+  <a class="pill {% if untagged %}active{% endif %}" href="/?untagged=true{% if source %}&source={{ source }}{% endif %}">Untagged</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  {% for a in articles %}
+    <div class="card" id="art-{{ a.id }}">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:6px">
+        <h3><a href="/articles/{{ a.id }}">{{ a.title }}</a></h3>
+        <span class="badge {{ a.badge_class }}">{{ a.issue.source.value | badge_label }}</span>
+      </div>
+      <p>{{ (a.llm_summary or a.raw_snippet[:280]) }}</p>
+      {% if a.llm_so_what %}
+      <div class="so-what"><strong>So what for .NET:</strong> {{ a.llm_so_what }}</div>
+      {% endif %}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
+        <div class="tags">
+          {% for t in a.tags %}<span class="tag on">{{ t.name }}</span>{% endfor %}
+          {% if a.suggested_tags %}
+            {% for st in a.suggested_tags.split(',') %}<span class="tag" style="opacity:.6">+ {{ st.strip() }}</span>{% endfor %}
+          {% endif %}
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;white-space:nowrap">
+          <input type="checkbox" {% if a.reviewed %}checked{% endif %}
+                 hx-post="/articles/{{ a.id }}/review" hx-target="#art-{{ a.id }} .reviewed-pill" hx-swap="outerHTML">
+          <span class="reviewed-pill" style="color:#34d399">{% if a.reviewed %}reviewed{% endif %}</span>
+        </label>
+      </div>
+      <div class="meta">
+        <span class="status s-{{ a.enrich_status.value | replace('_','-') }}">{{ a.enrich_status.value }}</span>
+        · {{ a.issue.received_at | short_date }} · <a href="{{ a.url }}" target="_blank">open ↗</a>
+      </div>
+    </div>
+  {% else %}
+    <div style="color:#64748b;padding:24px">No articles yet. <a href="/inbox">Fetch your inbox</a> to get started.</div>
+  {% endfor %}
+</div>
+{% endblock %}

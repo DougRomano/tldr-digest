@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ source_display }} — Weekly TLDR Digest ({{ generated_date }})</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.55; padding: 32px 16px 80px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 12px; color: {{ accent_color }}; margin-bottom: 6px; }
+  h1 { font-size: 34px; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px; }
+  .subtitle { color: #94a3b8; margin-top: 6px; font-size: 15px; }
+  .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; padding: 16px 20px; background: #1a1f2e; border: 1px solid #2a3142; border-radius: 10px; }
+  .stat { color: #94a3b8; font-size: 13px; }
+  .stat strong { display: block; color: #f8fafc; font-size: 18px; font-weight: 600; margin-bottom: 2px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
+  .metric { background: linear-gradient(135deg, #1a1f2e 0%, #1e2436 100%); border: 1px solid #2a3142; border-radius: 12px; padding: 20px; }
+  .metric .value { font-size: 28px; font-weight: 700; color: {{ accent_color }}; margin-bottom: 4px; }
+  .metric .label { color: #cbd5e1; font-size: 13px; font-weight: 500; }
+  .metric .sub { color: #64748b; font-size: 12px; margin-top: 4px; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 20px; color: #f1f5f9; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #2a3142; display: flex; align-items: center; gap: 10px; }
+  h2 .emoji { font-size: 22px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { background: #1a1f2e; border: 1px solid #2a3142; border-radius: 10px; padding: 18px; transition: border-color 0.2s; }
+  .card:hover { border-color: #3b4258; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .card h3 { font-size: 15px; color: #f8fafc; font-weight: 600; line-height: 1.35; }
+  .card h3 a { color: inherit; text-decoration: none; }
+  .card h3 a:hover { color: {{ accent_color }}; }
+  .badge { flex-shrink: 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; padding: 3px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .b-ai { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+  .b-dev { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+  .b-devops { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+  .b-general { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+  .b-infosec { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+  .b-it { background: rgba(45, 212, 191, 0.15); color: #2dd4bf; }
+  .b-founders { background: rgba(244, 114, 182, 0.15); color: #f472b6; }
+  .b-design { background: rgba(244, 114, 182, 0.15); color: #f472b6; }
+  .card p { color: #cbd5e1; font-size: 13.5px; margin-bottom: 10px; }
+  .so-what { background: {{ so_what_bg }}; border-left: 2px solid {{ accent_color }}; padding: 8px 12px; margin: 10px 0 12px; font-size: 12.5px; color: #cbd5e1; border-radius: 0 4px 4px 0; }
+  .so-what strong { color: {{ so_what_strong }}; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag { font-size: 11px; color: #94a3b8; background: #232a3b; padding: 2px 8px; border-radius: 4px; }
+  .meta { font-size: 11px; color: #64748b; margin-top: 8px; }
+  .bonus { background: linear-gradient(135deg, #0f2030 0%, #0d1d2e 100%); border: 1px solid #1e3a5f; border-radius: 12px; padding: 22px; margin-bottom: 36px; }
+  .bonus h2 { color: #38bdf8; border-bottom-color: #1e3a5f; }
+  .bonus .card { background: #131e2c; border-color: #1e3a5f; }
+  footer { margin-top: 60px; text-align: center; color: #64748b; font-size: 12px; }
+  @media (max-width: 760px) { .stats-bar, .metrics { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="eyebrow">{{ eyebrow }}</div>
+    <h1>{{ headline }}</h1>
+    <div class="subtitle">{{ date_range }} · Curated for a .NET architect / Azure enterprise lens</div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat"><strong>{{ stats.newsletters_scanned }}</strong>Newsletters scanned</div>
+    <div class="stat"><strong>{{ stats.articles_count }}</strong>Articles surfaced</div>
+    <div class="stat"><strong>{{ stats.date_range_short }}</strong>Date range</div>
+    <div class="stat"><strong>{{ stats.sources_display }}</strong>Sources</div>
+  </div>
+
+  <div class="metrics">
+    {% for m in metrics %}
+    <div class="metric">
+      <div class="value">{{ m.value }}</div>
+      <div class="label">{{ m.label }}</div>
+      <div class="sub">{{ m.sub }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if bonus_section %}
+  <div class="bonus">
+    <h2><span class="emoji">⚡</span> .NET / Azure — Bonus</h2>
+    <div class="cards">
+      {% for c in bonus_section.cards %}
+      {% include "_card.html.j2" %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% for sec in sections %}
+  <section>
+    <h2><span class="emoji">{{ sec.emoji }}</span> {{ sec.title }}</h2>
+    <div class="cards">
+      {% for c in sec.cards %}
+      {% include "_card.html.j2" %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  <footer>
+    Generated {{ generated_date }} · Weekly TLDR Digest · Curated for Doug Romano
+  </footer>
+</div>
+</body>
+</html>

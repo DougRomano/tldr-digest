@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Settings · TLDRDigest{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Settings</h2>
+    <div class="subtitle">Pick the active LLM provider and model. CLI flags <code>--provider</code> override this.</div>
+  </div>
+</div>
+
+<form method="post" action="/settings" style="display:grid;grid-template-columns:max-content 1fr;gap:14px 18px;align-items:center;max-width:720px">
+  <label>Active provider</label>
+  <div>
+    {% for p in providers %}
+      <label style="margin-right:14px">
+        <input type="radio" name="active_provider" value="{{ p }}"
+               {% if cur.get('active_provider', 'claude') == p %}checked{% endif %}>
+        {{ p }}
+      </label>
+    {% endfor %}
+  </div>
+
+  <label>Claude model</label>
+  <input type="text" name="claude_model" value="{{ cur.get('claude_model', 'claude-sonnet-4-6') }}" placeholder="claude-sonnet-4-6"/>
+
+  <label>Ollama chat model</label>
+  <input type="text" name="ollama_chat_model" value="{{ cur.get('ollama_chat_model', 'llama3.1:8b') }}" placeholder="llama3.1:8b"/>
+
+  <label>Ollama embed model</label>
+  <input type="text" name="ollama_embed_model" value="{{ cur.get('ollama_embed_model', 'mxbai-embed-large') }}" placeholder="mxbai-embed-large"/>
+
+  <div></div>
+  <div><button class="btn primary">Save</button></div>
+</form>
+
+<h3 style="font-size:14px;color:#94a3b8;margin:32px 0 8px">Environment (read-only — edit <code>.env</code>)</h3>
+<table class="list" style="max-width:720px">
+  <tr><td>Yahoo user</td><td>{{ yahoo_user }}</td></tr>
+  <tr><td>Yahoo app password set</td><td>{% if yahoo_pw_set %}<span class="status s-completed">yes</span>{% else %}<span class="status s-failed">missing</span>{% endif %}</td></tr>
+  <tr><td>Anthropic key set</td><td>{% if anthropic_key_set %}<span class="status s-completed">yes</span>{% else %}<span class="status s-pending">missing</span>{% endif %}</td></tr>
+  <tr><td>Ollama host</td><td>{{ ollama_host }}</td></tr>
+  <tr><td>Database URL</td><td><code>{{ db_url }}</code></td></tr>
+  <tr><td>Reports output dir</td><td><code>{{ reports_dir }}</code></td></tr>
+</table>
+{% endblock %}

@@ -1,0 +1,57 @@
+# TLDRDigest deployment.
+#
+# Default: just the app — it connects to your EXISTING Postgres (e.g. the
+# pgvector container on your Unraid server). Configure DATABASE_URL in .env.
+#
+#   docker compose up -d --build            # build + run the app
+#   docker compose exec app tldr fetch      # pull this week's emails
+#   docker compose exec app tldr enrich     # summarize + embed
+#
+# Optional: spin up a throwaway local Postgres+pgvector instead of using a
+# remote one (handy for Mac-local dev):
+#
+#   docker compose --profile local-db up -d
+#
+# See DEPLOY.md for the Unraid walkthrough and version requirements.
+
+services:
+  app:
+    build: .
+    image: tldr-digest:latest
+    container_name: tldr-digest
+    env_file: .env
+    environment:
+      # Inside a container, REPORTS_DIR must be a container path; the volume
+      # below maps it to a host folder / Unraid share.
+      REPORTS_DIR: /reports
+      WEB_PORT: 8080
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    volumes:
+      # Generated HTML reports land here. Point the left side at an Unraid
+      # share, e.g. /mnt/user/appdata/tldr-digest/reports
+      - ${REPORTS_HOST_DIR:-./reports}:/reports
+    restart: unless-stopped
+
+  # ---- Optional local database (Mac dev only) -------------------------------
+  # Not needed if you use the Unraid Postgres. Enable with: --profile local-db
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tldr-postgres
+    profiles: ["local-db"]
+    environment:
+      POSTGRES_USER: tldr
+      POSTGRES_PASSWORD: tldr
+      POSTGRES_DB: tldr
+    ports:
+      - "5433:5432"
+    volumes:
+      - tldr_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tldr -d tldr"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tldr_pgdata:

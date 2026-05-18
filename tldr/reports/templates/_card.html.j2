@@ -1,0 +1,14 @@
+<div class="card">
+  <div class="card-header">
+    <h3><a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">{{ c.title }}</a></h3>
+    <span class="badge {{ c.badge_class }}">{{ c.badge_label }}</span>
+  </div>
+  <p>{{ c.summary }}</p>
+  {% if c.so_what %}
+  <div class="so-what"><strong>So what for .NET:</strong> {{ c.so_what }}</div>
+  {% endif %}
+  {% if c.tags %}
+  <div class="tags">{% for t in c.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+  {% endif %}
+  <div class="meta">{{ c.meta }}</div>
+</div>
