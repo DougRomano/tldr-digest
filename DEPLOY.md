@@ -107,21 +107,50 @@ and `REPORTS_HOST_DIR` (an Unraid share where HTML reports should land, e.g.
 ## Step 3 — Run the app
 
 The app is a separate container from Postgres. It runs the web UI and the CLI.
+On startup it **waits for Postgres, runs `alembic upgrade head`** (creates all
+tables, enables `vector` + `pg_trgm`, seeds tags), then serves the web UI on
+port `8080`.
+
+### Option 1 — Pre-built image from GHCR (recommended for Unraid)
+
+The app image is published to GitHub Container Registry by CI:
+
+```
+ghcr.io/dougromano/tldr-digest:latest
+```
+
+> **One-time:** GHCR packages start out private. After the first CI build,
+> open <https://github.com/users/DougRomano/packages/container/tldr-digest/settings>
+> → **Change visibility → Public** so Unraid can pull it without credentials.
+> (Or keep it private and add registry credentials in Unraid's Docker settings.)
+
+In the Unraid **Docker** tab → **Add Container**:
+
+| Field | Value |
+|---|---|
+| Repository | `ghcr.io/dougromano/tldr-digest:latest` |
+| Network | same network as your Postgres container (or `bridge`) |
+| Port | Container `8080` → Host `8080` |
+| Path | Container `/reports` → Host `/mnt/user/appdata/tldr-digest/reports` |
+| Variable | `DATABASE_URL` = `postgresql+asyncpg://tldr:PW@<unraid-ip>:5432/tldr` |
+| Variable | `YAHOO_USER` = your Yahoo address |
+| Variable | `YAHOO_APP_PASSWORD` = your Yahoo app password |
+| Variable | `ANTHROPIC_API_KEY` = your key *(or configure Ollama)* |
+| Variable | `OLLAMA_HOST` = `http://<unraid-ip>:11434` *(if using Ollama)* |
+
+Apply. Open `http://<unraid-ip>:8080`.
+
+### Option 2 — Build on Unraid with Compose Manager
+
+Use the **Compose Manager** plugin (Community Applications): create a new stack,
+paste this repo's `docker-compose.yml`, put your `.env` next to it, **Compose Up**.
+This builds the image locally from the `Dockerfile` — no registry needed.
+
+### Option 3 — Mac / local
 
 ```bash
 docker compose up -d --build
 ```
-
-On startup the container **waits for Postgres, runs `alembic upgrade head`**
-(creates all tables, enables `vector` + `pg_trgm`, seeds tags), then serves the
-web UI on port `8080`. Open `http://<unraid-ip>:8080`.
-
-### Deploying on Unraid itself
-
-Use the **Compose Manager** plugin (Community Applications): create a new stack,
-paste this repo's `docker-compose.yml`, put your `.env` next to it, and hit
-**Compose Up**. Or build the image once and add it as a normal Unraid container
-(repository `tldr-digest:latest`, port `8080`, env-file mounted).
 
 ---
 

@@ -17,6 +17,11 @@ It covers getting pgvector onto your Postgres, version matching, and the Unraid 
 
 ## Quick start — Docker (recommended)
 
+A pre-built image is published to GHCR by CI: **`ghcr.io/dougromano/tldr-digest:latest`**.
+On Unraid, just add a container pointing at that image — see **[DEPLOY.md](DEPLOY.md)**.
+
+To run from this repo with Compose:
+
 ```bash
 cp .env.example .env
 # edit .env: DATABASE_URL (your Postgres), YAHOO_APP_PASSWORD, ANTHROPIC_API_KEY
