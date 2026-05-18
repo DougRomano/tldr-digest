@@ -72,7 +72,9 @@ async def run_enrich(
                 .where(Article.enrich_status == ArticleEnrichStatus.pending)
                 .order_by(Article.id)
                 .limit(limit)
-                .options(selectinload(Article.issue))
+                # embedding is eager-loaded so assigning a new ArticleEmbedding
+                # in _enrich_one() does not trigger an implicit async lazy-load.
+                .options(selectinload(Article.issue), selectinload(Article.embedding))
             )
         ).scalars().all()
 
@@ -110,7 +112,17 @@ async def run_enrich(
 async def _rollup_issue_status(session, issue_ids: set[int]) -> None:
     """After enriching a batch, update each affected issue's enrich_status."""
     for iid in issue_ids:
-        issue = await session.get(NewsletterIssue, iid, options=[selectinload(NewsletterIssue.articles)])
+        # Use an explicit select with populate_existing: session.get() would
+        # return the issue already cached in the identity map (loaded via the
+        # Article.issue selectinload) and silently skip the articles eager-load.
+        issue = (
+            await session.execute(
+                select(NewsletterIssue)
+                .where(NewsletterIssue.id == iid)
+                .options(selectinload(NewsletterIssue.articles))
+                .execution_options(populate_existing=True)
+            )
+        ).scalar_one_or_none()
         if issue is None:
             continue
         statuses = [a.enrich_status for a in issue.articles]

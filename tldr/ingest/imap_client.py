@@ -18,21 +18,23 @@ from tldr.db.models import SourceName
 log = logging.getLogger(__name__)
 
 
-# Subject prefix → canonical source. The order matters: longer prefixes first
-# so "TLDR DevOps" matches before "TLDR".
-SUBJECT_MAP: list[tuple[re.Pattern[str], SourceName]] = [
-    (re.compile(r"^\s*TLDR\s+AI\b", re.I), SourceName.tldr_ai),
-    (re.compile(r"^\s*TLDR\s+DevOps\b", re.I), SourceName.tldr_devops),
-    (re.compile(r"^\s*TLDR\s+Dev\b", re.I), SourceName.tldr_dev),
-    (re.compile(r"^\s*TLDR\b", re.I), SourceName.tldr_tech),  # "TLDR" alone == TLDR Tech
-]
+# All TLDR newsletters are sent from one address (dan@tldrnewsletter.com); the
+# newsletter is identified by the From *display name*, not the subject (subjects
+# are content headlines). Match the full name exactly, case-insensitive —
+# "TLDR Dev" is a prefix of "TLDR DevOps", so prefix matching would misroute.
+# Newsletters not in this map (TLDR InfoSec/IT/Design/Founders/Data/Fintech/
+# Product) are intentionally skipped.
+DISPLAY_NAME_MAP: dict[str, SourceName] = {
+    "tldr": SourceName.tldr_tech,        # the flagship "TLDR" newsletter
+    "tldr ai": SourceName.tldr_ai,
+    "tldr devops": SourceName.tldr_devops,
+    "tldr dev": SourceName.tldr_dev,
+}
 
 
-def classify_source(subject: str) -> SourceName | None:
-    for pattern, source in SUBJECT_MAP:
-        if pattern.search(subject):
-            return source
-    return None
+def classify_source(from_name: str) -> SourceName | None:
+    key = re.sub(r"\s+", " ", (from_name or "").strip().lower())
+    return DISPLAY_NAME_MAP.get(key)
 
 
 @dataclass(slots=True)
@@ -56,7 +58,8 @@ def fetch_recent(since_days: int = 7, folder: str = "INBOX") -> list[FetchedEmai
     ) as mailbox:
         criteria = AND(date_gte=since_date)
         for msg in mailbox.fetch(criteria, mark_seen=False, bulk=True):
-            source = classify_source(msg.subject or "")
+            from_name = msg.from_values.name if msg.from_values else ""
+            source = classify_source(from_name)
             if source is None:
                 continue
             received_at = msg.date if msg.date else datetime.now(timezone.utc)

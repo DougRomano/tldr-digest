@@ -134,7 +134,16 @@ def _hash_embedding(text: str, dim: int) -> list[float]:
     import hashlib
     import math
 
-    h = hashlib.blake2b(text.encode("utf-8"), digest_size=dim * 2).digest()
-    vec = [((b - 127.5) / 127.5) for b in h[:dim]]
+    # blake2b caps digest_size at 64 bytes, so collect `dim` bytes across
+    # multiple salted hashes of the same input.
+    data = text.encode("utf-8")
+    buf = bytearray()
+    counter = 0
+    while len(buf) < dim:
+        buf.extend(
+            hashlib.blake2b(data, digest_size=64, salt=counter.to_bytes(2, "little")).digest()
+        )
+        counter += 1
+    vec = [((b - 127.5) / 127.5) for b in buf[:dim]]
     norm = math.sqrt(sum(v * v for v in vec)) or 1.0
     return [v / norm for v in vec]

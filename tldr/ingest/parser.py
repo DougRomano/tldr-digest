@@ -158,6 +158,15 @@ def parse_tldr_html(html: str, source: SourceName) -> list[ParsedArticle]:
         if title.lower() in {"read more", "read", "here", "view", "click here", "subscribe", "unsubscribe"}:
             continue
 
+        # TLDR's genuine content articles always carry a "(N minute read)" or
+        # "(GitHub Repo)" marker. Links without one are sponsor blurbs, footer
+        # links, referral URLs, "Sign Up" / "Advertise" chrome — skip them.
+        if read_time is None:
+            continue
+        # Drop anything still flagged as sponsored.
+        if "(sponsor)" in raw_text.lower():
+            continue
+
         snippet = _collect_snippet(a)
         section = _detect_section(a)
 
