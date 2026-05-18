@@ -67,9 +67,13 @@ def _strip_json_fence(s: str) -> str:
 
 def parse_json_object(s: str) -> dict:
     s = _strip_json_fence(s)
-    # Some models prepend chatter; isolate the first { ... } block.
+    # Models sometimes prepend chatter and/or append a trailing explanation.
+    # raw_decode parses exactly one JSON object starting at the first "{" and
+    # ignores anything after it — robust to both.
     start = s.find("{")
-    end = s.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        s = s[start : end + 1]
-    return json.loads(s)
+    if start == -1:
+        raise json.JSONDecodeError("no JSON object found in response", s, 0)
+    obj, _end = json.JSONDecoder().raw_decode(s, start)
+    if not isinstance(obj, dict):
+        raise json.JSONDecodeError("expected a JSON object", s, start)
+    return obj

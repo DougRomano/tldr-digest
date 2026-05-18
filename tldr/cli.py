@@ -32,12 +32,16 @@ def fetch(
 def enrich(
     limit: int = typer.Option(50, "--limit", help="Max articles to enrich this run"),
     provider: Optional[str] = typer.Option(None, "--provider", help="claude | ollama (overrides setting)"),
+    source: Optional[str] = typer.Option(
+        None, "--source", help="Limit to one newsletter: tldr_tech | tldr_ai | tldr_devops | tldr_dev"
+    ),
 ):
     """Run summarize + embed for pending articles."""
     from tldr.llm.enrich import run_enrich
 
     p_override = LLMProviderName(provider) if provider else None
-    stats = asyncio.run(run_enrich(limit=limit, provider_override=p_override))
+    src = SourceName(source) if source else None
+    stats = asyncio.run(run_enrich(limit=limit, provider_override=p_override, source=src))
     typer.echo(
         f"summarized={stats.summarized} embedded={stats.embedded} failed={stats.failed} skipped={stats.skipped}"
     )

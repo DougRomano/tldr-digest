@@ -16,6 +16,7 @@ from tldr.db.models import (
     EnrichStatus,
     LLMProviderName,
     NewsletterIssue,
+    SourceName,
 )
 from tldr.db.session import session_scope
 from tldr.llm.factory import get_provider
@@ -59,24 +60,27 @@ async def _enrich_one(provider, article: Article, source_display: str) -> tuple[
 
 
 async def run_enrich(
-    *, limit: int = 50, provider_override: LLMProviderName | None = None
+    *,
+    limit: int = 50,
+    provider_override: LLMProviderName | None = None,
+    source: SourceName | None = None,
 ) -> EnrichStats:
     stats = EnrichStats()
     async with session_scope() as s:
         provider = await get_provider(s, override=provider_override)
         log.info("enrich: using provider=%s chat=%s embed=%s", provider.name.value, provider.chat_model, provider.embed_model)
 
-        pending = (
-            await s.execute(
-                select(Article)
-                .where(Article.enrich_status == ArticleEnrichStatus.pending)
-                .order_by(Article.id)
-                .limit(limit)
-                # embedding is eager-loaded so assigning a new ArticleEmbedding
-                # in _enrich_one() does not trigger an implicit async lazy-load.
-                .options(selectinload(Article.issue), selectinload(Article.embedding))
-            )
-        ).scalars().all()
+        stmt = select(Article).where(Article.enrich_status == ArticleEnrichStatus.pending)
+        if source is not None:
+            stmt = stmt.join(NewsletterIssue).where(NewsletterIssue.source == source)
+        stmt = (
+            stmt.order_by(Article.id)
+            .limit(limit)
+            # embedding is eager-loaded so assigning a new ArticleEmbedding
+            # in _enrich_one() does not trigger an implicit async lazy-load.
+            .options(selectinload(Article.issue), selectinload(Article.embedding))
+        )
+        pending = (await s.execute(stmt)).scalars().all()
 
         if not pending:
             log.info("enrich: nothing pending")
