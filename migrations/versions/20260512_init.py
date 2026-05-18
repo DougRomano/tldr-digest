@@ -12,6 +12,7 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 from pgvector.sqlalchemy import Vector
+from sqlalchemy.dialects import postgresql
 
 revision: str = "0001_init"
 down_revision: Union[str, None] = None
@@ -33,17 +34,28 @@ def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
 
-    # enums
-    source_enum = sa.Enum(*SOURCE_NAME, name="source_name")
-    fetch_enum = sa.Enum(*FETCH_STATUS, name="fetch_status")
-    enrich_enum = sa.Enum(*ENRICH_STATUS, name="enrich_status")
-    report_enum = sa.Enum(*REPORT_STATUS, name="report_status")
-    article_enrich_enum = sa.Enum(*ARTICLE_ENRICH_STATUS, name="article_enrich_status")
-    provider_enum = sa.Enum(*LLM_PROVIDER_NAME, name="llm_provider_name")
+    # enums — create each Postgres type ONCE here via raw SQL, then reference
+    # them in columns with create_type=False so create_table() never re-emits
+    # CREATE TYPE (multiple tables share the same types).
+    def _mkenum(name: str, values: tuple[str, ...]) -> None:
+        vals = ", ".join(f"'{v}'" for v in values)
+        op.execute(f"CREATE TYPE {name} AS ENUM ({vals})")
 
-    bind = op.get_bind()
-    for e in (source_enum, fetch_enum, enrich_enum, report_enum, article_enrich_enum, provider_enum):
-        e.create(bind, checkfirst=True)
+    _mkenum("source_name", SOURCE_NAME)
+    _mkenum("fetch_status", FETCH_STATUS)
+    _mkenum("enrich_status", ENRICH_STATUS)
+    _mkenum("report_status", REPORT_STATUS)
+    _mkenum("article_enrich_status", ARTICLE_ENRICH_STATUS)
+    _mkenum("llm_provider_name", LLM_PROVIDER_NAME)
+
+    source_enum = postgresql.ENUM(*SOURCE_NAME, name="source_name", create_type=False)
+    fetch_enum = postgresql.ENUM(*FETCH_STATUS, name="fetch_status", create_type=False)
+    enrich_enum = postgresql.ENUM(*ENRICH_STATUS, name="enrich_status", create_type=False)
+    report_enum = postgresql.ENUM(*REPORT_STATUS, name="report_status", create_type=False)
+    article_enrich_enum = postgresql.ENUM(
+        *ARTICLE_ENRICH_STATUS, name="article_enrich_status", create_type=False
+    )
+    provider_enum = postgresql.ENUM(*LLM_PROVIDER_NAME, name="llm_provider_name", create_type=False)
 
     # report — created first so newsletter_issue.report_id can FK it
     op.create_table(
